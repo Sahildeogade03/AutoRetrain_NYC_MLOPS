@@ -1,11 +1,32 @@
-project:
-  name: AutoRetrain-NYC
-  target: hourly_taxi_demand
+# configs/config.yaml
+
+data:
+  coverage_target: 0.99
 
 model:
-  name: lightgbm_raw
+  seasonal_k: 24
+
+validation:
+  final_holdout_hours: 336
+  walk_forward_horizon: 48
+  walk_forward_stride: 168
+  minimum_train_hours: 1440
+
+inference:
   horizon: 168
 
-mlflow:
-  experiment_name: nyc-taxi-experiment
-  tracking_uri: sqlite:///mlflow.db
+features:
+  lags:
+    - -1
+    - -2
+    - -3
+    - -24
+    - -48
+    - -72
+    - -96
+    - -120
+    - -144
+    - -168
+
+selection:
+  metric: cv_mae
