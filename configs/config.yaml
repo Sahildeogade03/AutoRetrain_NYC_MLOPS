@@ -1,0 +1,11 @@
+project:
+  name: AutoRetrain-NYC
+  target: hourly_taxi_demand
+
+model:
+  name: lightgbm_raw
+  horizon: 168
+
+mlflow:
+  experiment_name: nyc-taxi-experiment
+  tracking_uri: sqlite:///mlflow.db
