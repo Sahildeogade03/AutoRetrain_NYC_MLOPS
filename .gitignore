@@ -10,11 +10,7 @@ venv/
 
 # Data / artifacts
 data/raw/*
-data/processed/*
 data/external/*
-models/*
-reports/*
-mlruns/*
 
 # Keep directory structure
 !.gitkeep
