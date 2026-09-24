@@ -18,3 +18,4 @@ streamlit
 # Configuration / utilities
 pyyaml
 joblib
+dvc==3.67.1
