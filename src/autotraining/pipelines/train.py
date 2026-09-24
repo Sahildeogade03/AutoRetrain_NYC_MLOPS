@@ -1,441 +1,217 @@
-# src/autotraining/pipelines/train.py
+from __future__ import annotations
 
 from pathlib import Path
 
 import pandas as pd
+import yaml
 from darts import TimeSeries
-
-from autotraining.data.ingestion import (
-    build_hourly_zone_demand,
-)
-
-from autotraining.data.preprocessing import (
-    select_zones,
-    build_zone_panel,
-)
 
 from autotraining.features.demand_features import (
     build_calendar_covariates,
 )
-
-from autotraining.models.registry import (
-    MODEL_REGISTRY,
-)
-
-from autotraining.evaluation.cross_validation import (
-    make_walk_forward_folds,
-    run_walk_forward_cv,
+from autotraining.models.lightgbm_model import (
+    build_lightgbm_raw,
 )
 
 
-# ============================================================
-# PROJECT PATHS
-# ============================================================
+CONFIG_PATH = Path("configs/config.yaml")
 
-PROJECT_DIR = Path(__file__).resolve().parents[3]
+PANEL_PATH = Path(
+    "data/processed/zone_panel.parquet"
+)
 
-RAW_DIR = PROJECT_DIR / "data" / "raw"
-PROCESSED_DIR = PROJECT_DIR / "data" / "processed"
-REPORTS_DIR = PROJECT_DIR / "reports"
+CANDIDATE_MODEL_PATH = Path(
+    "models/lightgbm_raw_candidate.pt"
+)
 
-
-# ============================================================
-# CONFIG
-# ============================================================
-
-MONTHS = [
-    "2026-01",
-    "2026-02",
-    "2026-03",
-    "2026-04",
-    "2026-05",
-    "2026-06",
-    "2026-07",
-]
-
-COVERAGE_TARGET = 0.99
-SEASONAL_K = 24
-
-# Walk-forward validation
-WF_HORIZON = 48
-WF_STRIDE = 7 * 24
-WF_MIN_TRAIN = 60 * 24
+PRODUCTION_MODEL_PATH = Path(
+    "models/lightgbm_raw.pt"
+)
 
 
-# ============================================================
-# DATA PIPELINE
-# ============================================================
+def load_config(
+    config_path: Path = CONFIG_PATH,
+) -> dict:
+    """Load project configuration."""
 
-def build_data_pipeline():
+    if not config_path.exists():
+        raise FileNotFoundError(
+            f"Config file not found: {config_path}"
+        )
 
-    print("=" * 70)
-    print("AutoRetrain-NYC | Data + Feature Pipeline")
-    print("=" * 70)
+    with config_path.open("r") as file:
+        return yaml.safe_load(file)
 
-    # --------------------------------------------------------
-    # 1. INGESTION
-    # --------------------------------------------------------
 
-    print("\n[1/4] Building hourly zone demand...")
+def load_zone_panel(
+    panel_path: Path = PANEL_PATH,
+) -> pd.DataFrame:
+    """Load the processed zone demand panel."""
 
-    hourly_zone_demand = build_hourly_zone_demand(
-        raw_dir=RAW_DIR,
-        months=MONTHS,
-    )
+    if not panel_path.exists():
+        raise FileNotFoundError(
+            f"Zone panel not found: {panel_path}"
+        )
 
-    print(
-        f"Hourly zone demand shape: "
-        f"{hourly_zone_demand.shape}"
-    )
+    panel = pd.read_parquet(panel_path)
 
-    # --------------------------------------------------------
-    # 2. ZONE SELECTION
-    # --------------------------------------------------------
+    panel.index = pd.to_datetime(panel.index)
 
-    print("\n[2/4] Selecting demand-covering zones...")
+    return panel.sort_index()
 
-    selected_zones = select_zones(
-        hourly_zone_demand,
-        coverage_target=COVERAGE_TARGET,
-    )
 
-    print(
-        f"Selected zones: "
-        f"{len(selected_zones)}"
-    )
+def build_zone_series(
+    panel: pd.DataFrame,
+) -> list[TimeSeries]:
+    """Convert each zone into a Darts TimeSeries."""
 
-    # --------------------------------------------------------
-    # 3. BUILD HOURLY PANEL
-    # --------------------------------------------------------
+    return [
+        TimeSeries.from_series(panel[zone])
+        for zone in panel.columns
+    ]
 
-    print("\n[3/4] Building hourly zone panel...")
 
-    panel, system_missing_hours = build_zone_panel(
-        hourly_zone_demand,
-        selected_zones,
-    )
+def train_model(
+    panel: pd.DataFrame,
+    horizon: int,
+    device: str = "cpu",
+):
+    """
+    Train LightGBM on the supplied panel.
+    """
 
-    print(
-        f"Panel shape: "
-        f"{panel.shape}"
-    )
-
-    print(
-        f"System-wide missing hours: "
-        f"{len(system_missing_hours)}"
-    )
-
-    # --------------------------------------------------------
-    # 4. FEATURES
-    # --------------------------------------------------------
-
-    print("\n[4/4] Building calendar features...")
+    zone_series = build_zone_series(panel)
 
     calendar_covariates = build_calendar_covariates(
         panel.index
     )
 
-    print(
-        f"Calendar covariates shape: "
-        f"{calendar_covariates.shape}"
+    future_covariates = [
+        calendar_covariates
+        for _ in zone_series
+    ]
+
+    model = build_lightgbm_raw(
+        horizon=horizon,
+        device=device,
     )
 
-    # --------------------------------------------------------
-    # SAVE INTERMEDIATE DATA
-    # --------------------------------------------------------
+    model.fit(
+        series=zone_series,
+        future_covariates=future_covariates,
+    )
 
-    PROCESSED_DIR.mkdir(
+    return model
+
+
+def train_candidate(
+    train_panel: pd.DataFrame,
+    horizon: int,
+    device: str = "cpu",
+):
+    """
+    Train a candidate model using only the training period.
+    """
+
+    return train_model(
+        panel=train_panel,
+        horizon=horizon,
+        device=device,
+    )
+
+
+def train_production_model(
+    panel: pd.DataFrame,
+    horizon: int,
+    device: str = "cpu",
+):
+    """
+    Train the final production model using all available data.
+    """
+
+    return train_model(
+        panel=panel,
+        horizon=horizon,
+        device=device,
+    )
+
+
+def save_model(
+    model,
+    output_path: Path,
+) -> None:
+    """Save a Darts model."""
+
+    output_path.parent.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    hourly_zone_demand.to_parquet(
-        PROCESSED_DIR
-        / "hourly_zone_demand_pipeline.parquet",
-        index=False,
-    )
-
-    panel.to_parquet(
-        PROCESSED_DIR
-        / "zone_panel_pipeline.parquet",
-    )
-
-    print("\nData pipeline complete.")
-
-    return (
-        panel,
-        selected_zones,
-        calendar_covariates,
+    model.save(
+        str(output_path)
     )
 
 
-# ============================================================
-# BUILD DARTS SERIES
-# ============================================================
+def main() -> None:
 
-def build_darts_series(panel):
+    print("AutoRetrain-NYC | Production Training")
+    print("=" * 60)
 
-    print("\n" + "=" * 70)
-    print("Building Darts TimeSeries objects")
-    print("=" * 70)
+    config = load_config()
 
-    raw_series = []
-
-    for zone in panel.columns:
-
-        zone_series = TimeSeries.from_series(
-            panel[zone]
-        )
-
-        raw_series.append(
-            zone_series
-        )
-
-    print(
-        f"Created {len(raw_series)} "
-        f"zone time series."
+    model_config = config.get(
+        "model",
+        {},
     )
 
-    return raw_series
-
-
-# ============================================================
-# WALK-FORWARD CROSS VALIDATION
-# ============================================================
-
-def run_cv(
-    raw_series,
-    calendar_covariates,
-):
-
-    print("\n" + "=" * 70)
-    print("Walk-Forward Cross-Validation")
-    print("=" * 70)
-
-    total_length = len(raw_series[0])
-
-    folds = make_walk_forward_folds(
-        total_length=total_length,
-        min_train_size=WF_MIN_TRAIN,
-        horizon=WF_HORIZON,
-        stride=WF_STRIDE,
+    device = model_config.get(
+        "device",
+        "cpu",
     )
 
-    print(
-        f"\nTotal observations : {total_length}"
-    )
-
-    print(
-        f"Minimum train size : {WF_MIN_TRAIN}"
-    )
-
-    print(
-        f"Validation horizon  : {WF_HORIZON}"
-    )
-
-    print(
-        f"Validation stride   : {WF_STRIDE}"
-    )
-
-    print(
-        f"Number of folds     : {len(folds)}"
-    )
-
-    all_results = []
-
-    # --------------------------------------------------------
-    # RUN EACH MODEL
-    # --------------------------------------------------------
-
-    for model_name, model_cfg in MODEL_REGISTRY.items():
-
-        print("\n" + "-" * 70)
-
-        print(
-            f"Running model: "
-            f"{model_name}"
-        )
-
-        print(
-            f"Model kind: "
-            f"{model_cfg['kind']}"
-        )
-
-        print("-" * 70)
-
-        results = run_walk_forward_cv(
-            raw_series=raw_series,
-            future_covariates=calendar_covariates,
-            folds=folds,
-            model_name=model_name,
-            model_cfg=model_cfg,
-            seasonal_k=SEASONAL_K,
-        )
-
-        all_results.append(
-            results
-        )
-
-    cv_results = pd.concat(
-        all_results,
-        ignore_index=True,
-    )
-
-    return cv_results
-
-
-# ============================================================
-# SUMMARIZE CV RESULTS
-# ============================================================
-
-def summarize_cv_results(
-    cv_results,
-):
-
-    print("\n" + "=" * 70)
-    print("CV RESULTS")
-    print("=" * 70)
-
-    comparison = (
-        cv_results
-        .groupby("model")
-        .agg(
-            cv_mae=("mae", "mean"),
-            cv_rmse=("rmse", "mean"),
-            cv_mape=("mape", "mean"),
-            cv_smape=("smape", "mean"),
-        )
-        .sort_values("cv_mae")
-    )
-
-    print("\nModel comparison:\n")
-
-    print(
-        comparison.to_string(
-            float_format=lambda x: f"{x:.4f}"
+    horizon = int(
+        model_config.get(
+            "horizon",
+            336,
         )
     )
 
-    # --------------------------------------------------------
-    # SAVE RESULTS
-    # --------------------------------------------------------
+    panel = load_zone_panel()
 
-    REPORTS_DIR.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    cv_results.to_csv(
-        REPORTS_DIR
-        / "walk_forward_cv_results.csv",
-        index=False,
-    )
-
-    comparison.to_csv(
-        REPORTS_DIR
-        / "cv_model_comparison.csv",
-    )
-
-    # --------------------------------------------------------
-    # SELECT MODEL
-    # --------------------------------------------------------
-
-    selection_metric = "cv_mae"
-
-    best_model_name = (
-        comparison[selection_metric]
-        .idxmin()
+    print(
+        f"Training device: {device}"
     )
 
     print(
-        "\nSelected model by "
-        f"{selection_metric}: "
-        f"{best_model_name}"
+        f"Forecast horizon: {horizon}"
     )
-
-    return comparison, best_model_name
-
-
-# ============================================================
-# MAIN
-# ============================================================
-
-def main():
-
-    # --------------------------------------------------------
-    # 1. DATA + FEATURES
-    # --------------------------------------------------------
-
-    (
-        panel,
-        selected_zones,
-        calendar_covariates,
-    ) = build_data_pipeline()
-
-    # --------------------------------------------------------
-    # 2. DARTS SERIES
-    # --------------------------------------------------------
-
-    raw_series = build_darts_series(
-        panel
-    )
-
-    # --------------------------------------------------------
-    # 3. WALK-FORWARD CV
-    # --------------------------------------------------------
-
-    cv_results = run_cv(
-        raw_series=raw_series,
-        calendar_covariates=calendar_covariates,
-    )
-
-    # --------------------------------------------------------
-    # 4. MODEL COMPARISON
-    # --------------------------------------------------------
-
-    comparison, best_model_name = (
-        summarize_cv_results(
-            cv_results
-        )
-    )
-
-    # --------------------------------------------------------
-    # FINAL SUMMARY
-    # --------------------------------------------------------
-
-    print("\n" + "=" * 70)
-    print("TRAINING PIPELINE COMPLETE")
-    print("=" * 70)
 
     print(
-        f"Date range : "
+        f"Panel shape: {panel.shape}"
+    )
+
+    print(
+        f"Training period: "
         f"{panel.index.min()} → "
         f"{panel.index.max()}"
     )
 
-    print(
-        f"Zones      : "
-        f"{len(selected_zones)}"
+    print("\nTraining production model...")
+
+    model = train_production_model(
+        panel=panel,
+        horizon=horizon,
+        device=device,
+    )
+
+    save_model(
+        model,
+        PRODUCTION_MODEL_PATH,
     )
 
     print(
-        f"Panel      : "
-        f"{panel.shape}"
-    )
-
-    print(
-        f"CV folds   : "
-        f"{cv_results['fold'].nunique()}"
-    )
-
-    print(
-        f"Models     : "
-        f"{cv_results['model'].nunique()}"
-    )
-
-    print(
-        f"Selected   : "
-        f"{best_model_name}"
+        f"\nProduction model saved to: "
+        f"{PRODUCTION_MODEL_PATH}"
     )
 
 

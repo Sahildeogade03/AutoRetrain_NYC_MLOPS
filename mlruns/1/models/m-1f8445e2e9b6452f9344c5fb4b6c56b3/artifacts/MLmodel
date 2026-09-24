@@ -1,0 +1,16 @@
+artifact_path: /workspaces/AutoRetrain_NYC_MLOPS/mlruns/1/models/m-1f8445e2e9b6452f9344c5fb4b6c56b3/artifacts
+flavors: {}
+is_signature_from_type_hint: false
+metadata:
+  mlflow.model.isExternal: true
+mlflow_version: 3.16.1
+model_id: m-1f8445e2e9b6452f9344c5fb4b6c56b3
+model_uuid: m-1f8445e2e9b6452f9344c5fb4b6c56b3
+prompts: null
+run_id: 494f80093c0847e0a7a7e846dc977370
+signature:
+  inputs: '[{"type": "boolean", "required": true}]'
+  outputs: '[{"type": "boolean", "required": true}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-09-24 19:58:05.343383'

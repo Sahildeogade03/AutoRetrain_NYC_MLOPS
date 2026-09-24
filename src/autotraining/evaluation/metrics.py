@@ -1,46 +1,48 @@
-# src/autotraining/evaluation/metrics.py
+from __future__ import annotations
 
-import numpy as np
-
-from darts.metrics import mae, rmse, smape
+import pandas as pd
 
 
-def compute_metrics(actual, predicted) -> dict:
+def load_holdout_results(
+    path: str = "reports/v2_final_holdout_results.csv",
+) -> pd.DataFrame:
+    df = pd.read_csv(path)
 
-    actual_values = actual.values(copy=False).squeeze()
-    predicted_values = predicted.values(copy=False).squeeze()
-
-    nonzero_mask = actual_values != 0
-
-    if nonzero_mask.any():
-
-        mape_value = (
-            np.mean(
-                np.abs(
-                    (
-                        actual_values[nonzero_mask]
-                        - predicted_values[nonzero_mask]
-                    )
-                    / actual_values[nonzero_mask]
-                )
-            )
-            * 100
-        )
-
-    else:
-        mape_value = np.nan
-
-    return {
-        "mae": mae(actual, predicted),
-        "rmse": rmse(actual, predicted),
-        "mape": mape_value,
-        "smape": smape(actual, predicted),
+    required = {
+        "zone",
+        "model",
+        "mae",
+        "rmse",
+        "mape",
+        "smape",
     }
 
+    missing = required.difference(df.columns)
 
-def clip_nonnegative(series_list):
+    if missing:
+        raise ValueError(
+            f"Missing required columns: {sorted(missing)}"
+        )
 
-    return [
-        series.map(lambda x: np.maximum(x, 0.0))
-        for series in series_list
-    ]
+    return df
+
+
+def summarize_model_metrics(
+    df: pd.DataFrame,
+    model_name: str,
+) -> dict:
+    model_df = df[df["model"] == model_name]
+
+    if model_df.empty:
+        raise ValueError(
+            f"No holdout results found for model: {model_name}"
+        )
+
+    return {
+        "model": model_name,
+        "mae": float(model_df["mae"].mean()),
+        "rmse": float(model_df["rmse"].mean()),
+        "mape": float(model_df["mape"].mean()),
+        "smape": float(model_df["smape"].mean()),
+        "zones": int(model_df["zone"].nunique()),
+    }

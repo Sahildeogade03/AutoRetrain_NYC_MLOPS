@@ -1,10 +1,10 @@
-# configs/config.yaml
-
 data:
   coverage_target: 0.99
 
 model:
+  device: cpu
   seasonal_k: 24
+  horizon: 336
 
 validation:
   final_holdout_hours: 336
@@ -30,3 +30,7 @@ features:
 
 selection:
   metric: cv_mae
+
+quality_gate:
+  metric: mae
+  max_degradation: 0.05

@@ -1,4 +1,9 @@
 [core]
-    remote = gdrive
+    remote = dagshub-s3
 ['remote "gdrive"']
     url = gdrive://10B88dSgDJFtcpZzAmO51AIs0fZ8-aK4H/AutoRetrain-NYC-DVC
+['remote "dagshub"']
+    url = https://dagshub.com/Sahildeogade03/AutoRetrain_NYC_MLOPS.dvc
+['remote "dagshub-s3"']
+    url = s3://dvc
+    endpointurl = https://dagshub.com/Sahildeogade03/AutoRetrain_NYC_MLOPS.s3

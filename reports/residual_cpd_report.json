@@ -1,0 +1,7 @@
+{
+  "status": "pending_actuals",
+  "drift_detected": false,
+  "forecast_window_start": "2026-08-01 00:00:00",
+  "forecast_window_end": "2026-08-07 23:00:00",
+  "actual_data_available_until": "2026-07-31 23:00:00"
+}
