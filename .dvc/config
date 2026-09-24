@@ -1,0 +1,4 @@
+[core]
+    remote = gdrive
+['remote "gdrive"']
+    url = gdrive://10B88dSgDJFtcpZzAmO51AIs0fZ8-aK4H/AutoRetrain-NYC-DVC

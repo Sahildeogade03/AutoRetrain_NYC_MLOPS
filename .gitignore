@@ -15,6 +15,8 @@ data/external/*
 
 # Models
 models/*
+!models/*.dvc
+!models/.gitkeep
 
 # Keep directory structure
 !.gitkeep

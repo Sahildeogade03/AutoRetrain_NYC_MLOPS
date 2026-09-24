@@ -1,0 +1,5 @@
+outs:
+- md5: ec020d117a5950a07424afd6d751f89b
+  size: 97584038
+  hash: md5
+  path: lightgbm_raw_v2.pt
