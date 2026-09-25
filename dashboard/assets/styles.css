@@ -394,3 +394,141 @@
 .lifecycle-arrow {
     color: var(--muted);
 }
+
+.monitoring-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 15px 17px;
+    background: var(--surface);
+    min-height: 105px;
+}
+
+.monitoring-label {
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+}
+
+.monitoring-value {
+    font-size: 1.25rem;
+    font-weight: 720;
+    letter-spacing: -0.025em;
+    margin-top: 0.4rem;
+}
+
+.monitoring-meta {
+    color: var(--muted);
+    font-size: 0.72rem;
+    margin-top: 0.3rem;
+}
+
+.monitoring-page-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    background: var(--surface);
+}
+
+.monitoring-page-label {
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.monitoring-page-value {
+    font-size: 1.35rem;
+    font-weight: 720;
+    letter-spacing: -0.025em;
+    margin-top: 0.35rem;
+}
+
+.monitoring-page-meta {
+    color: var(--muted);
+    font-size: 0.72rem;
+    margin-top: 0.3rem;
+}
+
+.decision-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    border-bottom: 1px solid var(--border);
+    padding: 0.8rem 0.1rem;
+}
+
+.decision-row:last-child {
+    border-bottom: none;
+}
+
+.decision-marker {
+    width: 24px;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.decision-label {
+    flex: 1;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.decision-status {
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+
+.decision-result {
+    margin-top: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.9rem;
+    background: var(--surface);
+}
+
+.decision-result-label {
+    color: var(--muted);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.decision-result-value {
+    font-size: 1.05rem;
+    font-weight: 720;
+    margin-top: 0.3rem;
+}
+
+.decision-result-meta {
+    color: var(--muted);
+    font-size: 0.73rem;
+    margin-top: 0.35rem;
+}
+
+.config-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.85rem;
+    background: var(--surface);
+}
+
+.config-label {
+    color: var(--muted);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+.config-value {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-top: 0.25rem;
+}
+
+.config-meta {
+    color: var(--muted);
+    font-size: 0.68rem;
+    margin-top: 0.2rem;
+}

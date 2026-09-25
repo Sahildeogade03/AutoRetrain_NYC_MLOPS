@@ -6,24 +6,15 @@ def render_kpi(
     value: str,
     delta: str = "",
 ):
+    html = f"""
+    <div class="metric-card">
+        <div class="metric-label">{label}</div>
+        <div class="metric-value">{value}</div>
+        <div class="metric-delta">{delta}</div>
+    </div>
+    """
 
     st.markdown(
-        f"""
-        <div class="metric-card">
-
-            <div class="metric-label">
-                {label}
-            </div>
-
-            <div class="metric-value">
-                {value}
-            </div>
-
-            <div class="metric-delta">
-                {delta}
-            </div>
-
-        </div>
-        """,
+        html,
         unsafe_allow_html=True,
     )

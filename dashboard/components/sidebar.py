@@ -65,23 +65,6 @@ def render_sidebar() -> str:
             unsafe_allow_html=True,
         )
 
-        st.markdown(
-            """
-            <div class="sidebar-status-card">
-
-                <div class="sidebar-status-row">
-                    <span class="status-indicator">●</span>
-                    <span>System Healthy</span>
-                </div>
-
-                <div class="sidebar-status-meta">
-                    Production environment
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
 
         st.markdown("<div style='height: 12px'></div>", unsafe_allow_html=True)
 
@@ -90,12 +73,15 @@ def render_sidebar() -> str:
         # --------------------------------------------------
 
         st.markdown(
-            """
-            <div class="sidebar-environment">
-                <span>Environment</span>
-                <strong>production</strong>
-            </div>
-            """,
+            '<div class="sidebar-status-card">'
+            '<div class="sidebar-status-row">'
+            '<span class="status-indicator">●</span>'
+            '<span>System Healthy</span>'
+            '</div>'
+            '<div class="sidebar-status-meta">'
+            'Production environment'
+            '</div>'
+            '</div>',
             unsafe_allow_html=True,
         )
 

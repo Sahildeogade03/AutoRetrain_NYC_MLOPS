@@ -3,69 +3,119 @@ import streamlit as st
 from components.kpi import render_kpi
 from components.charts import actual_vs_forecast_chart
 from components.lifecycle import render_lifecycle
+from components.monitoring import render_monitoring_summary
 
 from services.forecast_service import get_forecast_metrics
+from services.monitoring_service import evaluate_monitoring
 from services.model_service import get_production_model
+from services.mlflow_service import get_latest_production_run
 
 
 def render_overview():
 
-    metrics = get_forecast_metrics()
-    model = get_production_model()
+    # =========================================================
+    # Load backend state
+    # =========================================================
 
-    # ---------------------------------------------------------
-    # Production Model
-    # ---------------------------------------------------------
+    forecast = get_forecast_metrics()
+    monitoring = evaluate_monitoring()
+    model = get_production_model()
+    mlflow_model = get_latest_production_run()
+
+    # =========================================================
+    # Production Model KPIs
+    # =========================================================
 
     st.markdown(
-        '<div class="section-heading">Production Model</div>',
+        '<div class="section-heading">'
+        'Production Model'
+        '</div>',
         unsafe_allow_html=True,
     )
 
     col1, col2, col3 = st.columns(3)
 
-    with col1:
+    # ---------------------------------------------------------
+    # MAE
+    # ---------------------------------------------------------
 
+    production_mae = None
+
+    if mlflow_model["available"]:
+        production_mae = mlflow_model.get(
+            "holdout_mae"
+        )
+
+    if production_mae is None:
+        production_mae = forecast["mae"]
+
+    with col1:
         render_kpi(
             "MAE",
-            f"{metrics['mae']:.1f}",
-            "Current production window",
+            f"{production_mae:.2f}",
+            "Validated holdout",
         )
+
+    # ---------------------------------------------------------
+    # RMSE
+    # ---------------------------------------------------------
+
+    production_rmse = None
+
+    if mlflow_model["available"]:
+        production_rmse = mlflow_model.get(
+            "holdout_rmse"
+        )
+
+    if production_rmse is None:
+        production_rmse = forecast["rmse"]
 
     with col2:
-
         render_kpi(
             "RMSE",
-            f"{metrics['rmse']:.1f}",
-            "Current production window",
+            f"{production_rmse:.2f}",
+            "Validated holdout",
         )
+
+    # ---------------------------------------------------------
+    # Drift
+    # ---------------------------------------------------------
 
     with col3:
 
-        render_kpi(
-            "DRIFT",
-            f"{metrics['drift']:.1f}%",
-            "Current monitoring window",
-        )
+        if monitoring["drift_detected"]:
+            render_kpi(
+                "DRIFT",
+                "DETECTED",
+                (
+                    f"{len(monitoring['change_points'])} "
+                    "change point(s)"
+                ),
+            )
+
+        else:
+            render_kpi(
+                "DRIFT",
+                "CLEAR",
+                "No significant drift",
+            )
+
+    # =========================================================
+    # Forecast Chart
+    # =========================================================
 
     st.markdown("")
 
-    # ---------------------------------------------------------
-    # Actual vs Forecast
-    # ---------------------------------------------------------
-
     st.markdown(
-        '<div class="section-heading">Actual vs Forecast</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<div class="chart-card">',
+        '<div class="section-heading">'
+        'Actual vs Forecast'
+        '</div>',
         unsafe_allow_html=True,
     )
 
     fig = actual_vs_forecast_chart(
-        metrics["forecast_data"]
+        forecast["forecast_data"],
+        lookback_hours=24 * 7,
     )
 
     st.plotly_chart(
@@ -77,37 +127,69 @@ def render_overview():
         },
     )
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    # =========================================================
+    # Monitoring Summary
+    # =========================================================
 
     st.markdown("")
 
-    # ---------------------------------------------------------
-    # Model Lifecycle
-    # ---------------------------------------------------------
-
     st.markdown(
-        '<div class="section-heading">Model Lifecycle</div>',
+        '<div class="section-heading">'
+        'Monitoring Status'
+        '</div>',
         unsafe_allow_html=True,
     )
 
-    render_lifecycle(
-        active_stage="Production"
-    )
+    render_monitoring_summary(monitoring)
+
+    # =========================================================
+    # Model Lifecycle
+    # =========================================================
 
     st.markdown("")
 
-    # ---------------------------------------------------------
-    # Production Model Information
-    # ---------------------------------------------------------
+    st.markdown(
+        '<div class="section-heading">'
+        'Model Lifecycle'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
-    model_col, summary_col = st.columns([1, 2])
+    # The dashboard reflects the monitoring state.
+    # It does not execute retraining.
+
+    if monitoring["retrain_required"]:
+        lifecycle_stage = "Drift Detected"
+
+    elif monitoring["drift_detected"]:
+        lifecycle_stage = "Drift Detected"
+
+    else:
+        lifecycle_stage = "Production"
+
+    render_lifecycle(
+        active_stage=lifecycle_stage
+    )
+
+    # =========================================================
+    # Production Model + System Summary
+    # =========================================================
+
+    st.markdown("")
+
+    model_col, summary_col = st.columns(
+        [1, 2]
+    )
+
+    # ---------------------------------------------------------
+    # Production Model
+    # ---------------------------------------------------------
 
     with model_col:
 
-        st.markdown(
+        st.html(
             f"""
             <div class="model-card">
-
                 <div class="model-label">
                     PRODUCTION MODEL
                 </div>
@@ -117,36 +199,63 @@ def render_overview():
                 </div>
 
                 <div class="model-meta">
-                    Version {model["version"]}
-                    · {model["status"]}
+                    Run {model["version"]} · {model["status"]}
                 </div>
 
+                <div class="model-meta">
+                    Variant: {model["variant"]}
+                </div>
+
+                <div class="model-meta">
+                    Data: {model["data_period"]}
+                </div>
             </div>
-            """,
-            unsafe_allow_html=True,
+            """
         )
+
+    # ---------------------------------------------------------
+    # Determine System Summary
+    # ---------------------------------------------------------
+
+    if monitoring["retrain_required"]:
+
+        summary_title = "Retraining required"
+
+    elif monitoring["drift_detected"]:
+
+        summary_title = "Monitoring alert"
+
+    else:
+
+        summary_title = (
+            "Forecasting pipeline operational"
+        )
+
+    # ---------------------------------------------------------
+    # System Summary
+    # ---------------------------------------------------------
 
     with summary_col:
 
-        st.markdown(
-            """
+        st.html(
+            f"""
             <div class="model-card">
-
                 <div class="model-label">
                     SYSTEM SUMMARY
                 </div>
 
                 <div class="model-name">
-                    Forecasting pipeline operational
+                    {summary_title}
                 </div>
 
                 <div class="model-meta">
-                    Production forecasting and monitoring
-                    status will be connected to the
-                    AutoRetrain-NYC backend.
+                    {monitoring["reason"]}
                 </div>
 
+                <div class="model-meta">
+                    Latest monitoring data:
+                    {forecast["latest_timestamp"]}
+                </div>
             </div>
-            """,
-            unsafe_allow_html=True,
+            """
         )

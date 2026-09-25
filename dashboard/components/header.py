@@ -26,14 +26,14 @@ def render_header():
 
         st.markdown(
             """
-            <div style="display:flex;
-                        justify-content:flex-end;
-                        padding-top:4px;">
-
+            <div style="
+                display:flex;
+                justify-content:flex-end;
+                padding-top:4px;
+            ">
                 <span class="status-pill">
                     ● SYSTEM HEALTHY
                 </span>
-
             </div>
             """,
             unsafe_allow_html=True,

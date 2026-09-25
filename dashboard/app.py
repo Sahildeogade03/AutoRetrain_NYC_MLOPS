@@ -1,6 +1,7 @@
 import streamlit as st
 
 from config import PAGE_CONFIG
+
 from components.theme import load_css
 from components.sidebar import render_sidebar
 from components.header import render_header
