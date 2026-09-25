@@ -1,0 +1,396 @@
+/* =========================================================
+   AutoRetrain-NYC — Dashboard Theme
+   ========================================================= */
+
+:root {
+    --border: rgba(128, 128, 128, 0.18);
+    --surface: rgba(128, 128, 128, 0.045);
+    --surface-hover: rgba(128, 128, 128, 0.075);
+    --muted: rgba(128, 128, 128, 0.78);
+}
+
+
+/* ---------- Global Layout ---------- */
+
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 2.5rem;
+    max-width: 1500px;
+}
+
+
+/* ---------- Sidebar ---------- */
+
+[data-testid="stSidebar"] {
+    border-right: 1px solid var(--border);
+}
+
+.sidebar-title {
+    font-size: 1.05rem;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+}
+
+.sidebar-subtitle {
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+
+/* =========================================================
+   SIDEBAR NAVIGATION
+   ========================================================= */
+
+.sidebar-brand {
+    font-size: 1.05rem;
+    font-weight: 750;
+    letter-spacing: -0.025em;
+}
+
+.sidebar-subtitle {
+    color: var(--muted);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.sidebar-section-label {
+    color: var(--muted);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    margin-bottom: 0.55rem;
+}
+
+
+/* Remove the default radio heading */
+
+[data-testid="stSidebar"] [data-testid="stRadio"] > label {
+    display: none;
+}
+
+
+/* Navigation container */
+
+[data-testid="stSidebar"] [data-testid="stRadio"] > div {
+    gap: 0.2rem;
+}
+
+
+/* Individual navigation item */
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+    border-radius: 10px;
+    padding: 0.62rem 0.75rem;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+
+    cursor: pointer;
+}
+
+
+/* Hover */
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
+    background: var(--surface-hover);
+}
+
+
+/* Hide the actual radio circle */
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label > div:first-child {
+    display: none;
+}
+
+
+/* Navigation text */
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label p {
+    font-size: 0.84rem;
+    font-weight: 520;
+    margin: 0;
+}
+
+
+/* Selected navigation item */
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(
+    input:checked
+) {
+    background: rgba(128, 128, 128, 0.12);
+}
+
+
+/* Selected text */
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(
+    input:checked
+) p {
+    font-weight: 680;
+}
+
+
+/* =========================================================
+   SIDEBAR STATUS
+   ========================================================= */
+
+.sidebar-status-card {
+    border: 1px solid var(--border);
+    border-radius: 11px;
+
+    padding: 0.75rem;
+
+    background: var(--surface);
+}
+
+.sidebar-status-row {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+
+    font-size: 0.78rem;
+    font-weight: 650;
+}
+
+.status-indicator {
+    font-size: 0.65rem;
+}
+
+.sidebar-status-meta {
+    color: var(--muted);
+    font-size: 0.68rem;
+
+    margin-top: 0.3rem;
+    padding-left: 1.05rem;
+}
+
+
+/* =========================================================
+   ENVIRONMENT
+   ========================================================= */
+
+.sidebar-environment {
+    display: flex;
+    justify-content: space-between;
+
+    color: var(--muted);
+
+    font-size: 0.7rem;
+
+    padding: 0.2rem 0.15rem;
+}
+
+.sidebar-environment strong {
+    color: inherit;
+    font-weight: 600;
+}
+
+.sidebar-version {
+    color: var(--muted);
+
+    font-size: 0.65rem;
+
+    margin-top: 1.2rem;
+    padding-left: 0.15rem;
+}
+
+
+/* ---------- Header ---------- */
+
+.dashboard-title {
+    font-size: 2rem;
+    font-weight: 750;
+    letter-spacing: -0.035em;
+    line-height: 1.1;
+}
+
+.dashboard-subtitle {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+
+/* ---------- Status ---------- */
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+
+    border: 1px solid var(--border);
+    border-radius: 999px;
+
+    padding: 0.32rem 0.72rem;
+
+    background: var(--surface);
+
+    font-size: 0.74rem;
+    font-weight: 650;
+
+    white-space: nowrap;
+}
+
+
+/* ---------- Section Headers ---------- */
+
+.section-heading {
+    font-size: 1.05rem;
+    font-weight: 680;
+    letter-spacing: -0.015em;
+
+    margin-top: 0.4rem;
+    margin-bottom: 0.8rem;
+}
+
+
+/* ---------- KPI Cards ---------- */
+
+.metric-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+
+    padding: 18px;
+
+    background: var(--surface);
+
+    min-height: 115px;
+
+    transition:
+        transform 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(128, 128, 128, 0.35);
+}
+
+.metric-label {
+    color: var(--muted);
+
+    font-size: 0.76rem;
+    font-weight: 650;
+
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.metric-value {
+    font-size: 1.75rem;
+    font-weight: 750;
+
+    letter-spacing: -0.035em;
+
+    margin-top: 0.45rem;
+}
+
+.metric-delta {
+    color: var(--muted);
+
+    font-size: 0.76rem;
+
+    margin-top: 0.4rem;
+}
+
+
+/* ---------- Chart Container ---------- */
+
+.chart-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+
+    padding: 0.5rem 0.7rem 0.1rem;
+
+    background: var(--surface);
+}
+
+
+/* ---------- Model Card ---------- */
+
+.model-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+
+    padding: 1rem 1.1rem;
+
+    background: var(--surface);
+}
+
+.model-label {
+    color: var(--muted);
+
+    font-size: 0.72rem;
+    font-weight: 650;
+
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.model-name {
+    font-size: 1.15rem;
+    font-weight: 720;
+
+    margin-top: 0.35rem;
+}
+
+.model-meta {
+    color: var(--muted);
+
+    font-size: 0.78rem;
+
+    margin-top: 0.25rem;
+}
+
+
+/* ---------- Lifecycle ---------- */
+
+.lifecycle-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+
+    padding: 1rem;
+
+    background: var(--surface);
+
+    overflow-x: auto;
+}
+
+.lifecycle {
+    display: flex;
+    align-items: center;
+
+    gap: 0.5rem;
+
+    min-width: 720px;
+}
+
+.lifecycle-step {
+    flex: 1;
+
+    text-align: center;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    padding: 0.65rem 0.5rem;
+
+    background: rgba(128, 128, 128, 0.035);
+
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.lifecycle-step.active {
+    background: rgba(128, 128, 128, 0.11);
+    border-color: rgba(128, 128, 128, 0.4);
+}
+
+.lifecycle-step.complete {
+    opacity: 0.65;
+}
+
+.lifecycle-arrow {
+    color: var(--muted);
+}
